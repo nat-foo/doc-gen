@@ -22,7 +22,7 @@ templates = {}
 # Crawl through Templates folder and dynamically import functions. This allows user to add function files.
 ### !todo MAKE THIS RECURSIVELY GO THROUGH ALL FOLDERS
 # Note that This is done in global scope
-for file_name in os.listdir(TEMPLATES_FOLDER): # Assuming cwd == '/aether'.
+for file_name in os.listdir(TEMPLATES_FOLDER): # Assuming cwd == 'doc-gen/'.
 
     # Error checks
     if file_name == "__init__.py" or file_name == "__pycache__":
@@ -75,7 +75,7 @@ def do_the_thing(settings_dict):
     # default_dict is a dictionary which stores the default values of each json file (In case an entry has no template).
     default_dict = {}
 
-    for file_name in os.listdir(INPUT_FOLDER): # Assuming cwd == '/aether'.        
+    for file_name in os.listdir(INPUT_FOLDER): # Assuming cwd == '/doc-gen'.        
 
         # Skip
         if file_name == "__init__.py":

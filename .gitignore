@@ -1,0 +1,8 @@
+# Ignore user-generated settings.
+settings
+
+# Ignore user-generated output.
+output
+
+# Ignore Python's caching.
+__pycache__

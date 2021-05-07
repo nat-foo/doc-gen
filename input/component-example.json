@@ -1,0 +1,162 @@
+{
+    "_default": ["component_imports", "component_interface", "component_function"],
+    "action": {
+        "_filename": "action.tsx",
+        "name": "action",
+        "properties": [
+            {
+                "name": "name",
+                "type": "string",
+                "def": "\"unspecifiedAction\""
+            },
+            {
+                "name": "isDefault",
+                "type": "boolean",
+                "def": "false"
+            },
+            {
+                "name": "phases",
+                "type": "Phase[]",
+                "def": "[]"
+            },
+            {
+                "name": "phaseLimits",
+                "type": "PhaseLimit[]",
+                "def": "[]"
+            }
+        ]
+    },
+    "phase": {
+        "_filename": "phase.tsx",
+        "name": "phase",
+        "properties": [
+            {
+                "name": "id",
+                "type": "number",
+                "def": "-1"
+            },
+            {
+                "name": "routineCallsOnce",
+                "type": "RoutineCall[]",
+                "def": "[]"
+            },
+            {
+                "name": "routineCallsRecurring",
+                "type": "RoutineCall[]",
+                "def": "[]"
+            },
+            {
+                "name": "transitions",
+                "type": "Transition[]",
+                "def": "[]"
+            },
+            {
+                "name": "sprites",
+                "type": "Sprite[]",
+                "def": "[]"
+            }
+        ]
+    },
+    "routineCall": {
+        "_filename": "routine-call.tsx",
+        "name": "routineCall",
+        "properties": [
+            {
+                "name": "routineName",
+                "type": "string",
+                "def": "\"unspecifiedRoutine\""
+            },
+            {
+                "name": "args",
+                "type": "any[]",
+                "def": "[]"
+            }
+        ]
+    },
+    "sprite": {
+        "_filename": "sprite.tsx",
+        "name": "sprite",
+        "properties": [
+            {
+                "name": "name",
+                "type": "string",
+                "def": "\"unspecifiedSprite\""
+            },
+            {
+                "name": "speed",
+                "type": "number",
+                "def": "1"
+            },
+            {
+                "name": "xOffset",
+                "type": "number",
+                "def": "0"
+            },
+            {
+                "name": "yOffset",
+                "type": "number",
+                "def": "0"
+            },
+            {
+                "name": "width",
+                "type": "number",
+                "def": "32"
+            },
+            {
+                "name": "height",
+                "type": "number",
+                "def": "32"
+            },
+            {
+                "name": "maskWidth",
+                "type": "number",
+                "def": "32"
+            },
+            {
+                "name": "maskHeight",
+                "type": "number",
+                "def": "32"
+            },
+            {
+                "name": "maskLeft",
+                "type": "number",
+                "def": "0"
+            },
+            {
+                "name": "maskRight",
+                "type": "number",
+                "def": "0"
+            },
+            {
+                "name": "maskTop",
+                "type": "number",
+                "def": "0"
+            },
+            {
+                "name": "maskBottom",
+                "type": "number",
+                "def": "0"
+            }
+        ]
+    },
+    "transition": {
+        "_filename": "transition.tsx",
+        "name": "transition",
+        "properties": [
+            {
+                "name": "name",
+                "type": "string",
+                "def": "\"unspecifiedTransition\""
+            },
+            {
+                "name": "description",
+                "type": "string",
+                "def": "\"A transition description.\""
+            },
+            {
+                "name": "Behaviour",
+                "type": "() => void"
+            }
+        ]
+    }
+}

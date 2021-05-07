@@ -10,9 +10,7 @@ def component_interface(_class, _classes):
     str = str[:-1] # Remove last new line.
     return str
 
-  return f"""import {{ ReactNode, useState }} from 'react'
-
-export interface {_class["name"]}Props {{
+  return f"""export interface {_class["name"]}Props {{
   children: ReactNode
 {iterate_interface(_class)}
 }}

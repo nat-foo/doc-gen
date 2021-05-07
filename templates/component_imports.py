@@ -29,5 +29,7 @@ def component_imports(_class, _classes):
     str = str[:-1] # Remove last new line.
     return str
 
-  return f"""{iterate_imports(_class)}
+  return f"""import {{ ReactNode, useState }} from 'react'
+{iterate_imports(_class)}
+
 """

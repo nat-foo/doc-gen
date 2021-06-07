@@ -319,9 +319,24 @@ Exit:       'e'
             # Settings menu
             user_input = ""
             options = {
-                "t": [user_dirpath_setting, "templates_dir", "Where would you like to load templates from?", []],
-                "d": [user_dirpath_setting, "data_dir", "Where would you like to load data from?", []],
-                "o": [user_dirpath_setting, "output_dir", "Where would you like to save the output to?", []]
+                "t": {
+                    "message": "Where would you like to load templates from?",
+                    "name": "templates_dir",
+                    "func": user_dirpath_setting
+                },
+                "d": {
+                    "message": "Where would you like to load data from?",
+                    "name": "data_dir",
+                    "func": user_dirpath_setting
+                },
+                "o": {
+                    "message": "Where would you like to save the output to?",
+                    "name": "output_dir",
+                    "func": user_dirpath_setting
+                },
+                "e": {
+                    "message": "Return to menu."
+                }
             }
 
             while user_input not in options.keys():
@@ -329,14 +344,15 @@ Exit:       'e'
                 msg = title
                 for key in options:
                     option = options[key]
-                    sp = len(title) - len(option[2]) # Just enough spaces to right-align the key.
-                    msg += f"{option[2]}{' '*sp}'{key}'{NL}"
+                    sp = len(title) - len(option["message"]) # Just enough spaces to right-align the key.
+                    msg += f"{option['message']}{' '*sp}'{key}'{NL}"
                     # E.g. Where would you like to load templates from?    't'
                 user_input = input(msg)
             
             # User pressed one of the options:
             option = options[user_input]
-            option[0](option[1], option[2])
+            if "func" in option:
+                option["func"](option["name"])
 
         elif user_input == "e":
             break

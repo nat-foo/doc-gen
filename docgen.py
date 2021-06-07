@@ -1,65 +1,29 @@
 
 #############################################
-# README : Run this program to get started. #
+#      RUN THIS PROGRAM TO GET STARTED      #
 #############################################
 
 # Do things with JSON, files and dynamically importing functions.
-import json, os, importlib
+import json, os
 
 # Used for getting names from class.
 from utils import parse_dict_properties
 
-# Define filepath constants.
-ROOT_FOLDER = os.getcwd() + "/"
-INPUT_FOLDER = ROOT_FOLDER + "input"
-TEMPLATES_FOLDER = ROOT_FOLDER + "templates"
-OUTPUT_FOLDER = ROOT_FOLDER + "output"
+# Used for getting filepath input.
+from tkinter import Tk
+from tkinter.filedialog import askdirectory
+Tk().withdraw() # Prevent TkInter from displaying root GUI.
 
-# Initialise templates dictionary
-templates = {}
+# Used for loading external Python modules.
+from utils import load_module
 
-# Load all files into templates dictionary
-# Crawl through Templates folder and dynamically import functions. This allows user to add function files.
-### !todo MAKE THIS RECURSIVELY GO THROUGH ALL FOLDERS
-# Note that This is done in global scope
-for file_name in os.listdir(TEMPLATES_FOLDER): # Assuming cwd == 'doc-gen/'.
+# Path globals.
+ROOT_DIR = os.getcwd()
+SETTINGS_PATH = f'{ROOT_DIR}/user_settings'
 
-    # Error checks
-    if file_name == "__init__.py" or file_name == "__pycache__":
-        continue
-
-    ### if file_name is a directory:
-    ### run recursive function
-    # !todo - this broke when I had a folder at `general/__pycache__`.
-    # Pycache is gitignored so 'general' stayed, but this loop doesn't know how to handle directories.
-    # Instead of fixing the problem, I just deleted the directory :)
-
-    ### DEF ()
-    # Strip off the .py on end of file name - not required for import lib.
-    file_name_stripped = file_name.split('.')[0]
-
-    template_string = 'templates.' + file_name_stripped
-
-    # Import programmatically with importlib.
-    module = importlib.import_module(template_string)
-    ### Return module (for scope purposes)
-
-    # Add entry to templates dictionary. Getattr takes a function from an object using a string (an f-string here)
-    # We want the form:
-    #           "actor_exception": actor_exception,
-    #                 str              function
-    # Use module that is returned by function
-
-    # Returns a Boolean - checking whether the function is in the file.
-    if hasattr(module, file_name_stripped):
-        
-        templates[file_name_stripped] = getattr(module, file_name_stripped)
-
-    else:
-
-        print(f'<!> File name does not match name of function in "{file_name_stripped}"! Skipping.')
-        input("Press any key to continue.")
-        continue
+# F-string special char globals.
+TAB = "\t"
+NL = "\n"
 
 def do_the_thing(settings_dict):
     """
@@ -68,6 +32,39 @@ def do_the_thing(settings_dict):
     This function creates the Document.
     """
 
+    # Initialise templates dictionary
+    templates = {}
+
+    # Get directories.
+    settings = get_settings()
+    TEMPLATES_DIR = settings["templates_dir"]
+    DATA_DIR = settings["data_dir"]
+    OUTPUT_DIR = settings["output_dir"]
+
+    # Load all files into templates dictionary
+    # Crawl through Templates dir and dynamically import functions. This allows user to add function files.
+    for name in os.listdir(TEMPLATES_DIR):
+
+        # Error checks
+        if name == "__init__.py" or name == "__pycache__":
+            continue
+
+        path = f'{TEMPLATES_DIR}/{name}'
+
+        module = load_module(name, path)
+
+        # Check whether a function by the same name is in the Python script.
+        func_name = name.split('.')[0] # Remove trailing `.py`
+        if hasattr(module, func_name):
+            
+            templates[func_name] = getattr(module, func_name)
+
+        else:
+
+            print(f'<!> File name does not match name of function in "{name}"! Skipping.')
+            input("Press any key to continue.")
+            continue
+
     # Get Json information. Store in 'classes' dictionary.
 
     # 'classes' is an array that contains the data objects to format the templates.
@@ -75,7 +72,7 @@ def do_the_thing(settings_dict):
     # default_dict is a dictionary which stores the default values of each json file (In case an entry has no template).
     default_dict = {}
 
-    for file_name in os.listdir(INPUT_FOLDER): # Assuming cwd == '/doc-gen'.        
+    for file_name in os.listdir(DATA_DIR): # Assuming cwd == '/doc-gen'.        
 
         # Skip
         if file_name == "__init__.py":
@@ -85,7 +82,7 @@ def do_the_thing(settings_dict):
         file_name_stripped = file_name.split('.')[0]
 
         # Load the raw JSON data into 'data'.
-        with open(f'{INPUT_FOLDER}/{file_name}') as f:
+        with open(f'{DATA_DIR}/{file_name}') as f:
             try:
                 data = json.load(f)
             except:
@@ -182,77 +179,47 @@ def do_the_thing(settings_dict):
             output_code += templates[function_name](_class, _classes)
 
         # Create filepath.
-        filepath = f'{OUTPUT_FOLDER}/{_class["_filename"]}'
+        filepath = f'{OUTPUT_DIR}/{_class["_filename"]}'
 
-        if "output" not in os.listdir():
-          os.mkdir("output")
+        # Write the formatted doc script to a new file at location.
+        text_file = open(filepath, "w")
+        text_file.write(output_code)
+        text_file.close()
 
-        if settings_dict["create_files"] == 'y':
-
-            # If the writing lock is on, then we can create a new directory.
-
-            # Write the formatted doc script to a new file at location.
-            text_file = open(filepath, "w")
-            text_file.write(output_code)
-            text_file.close()
-
-            # Log that bad boy.
-            print(f'\'{_class["_filename"]}\' ==> {filepath}.')
-
-        elif settings_dict["create_files"] == 'n':
-
-            # We need to check if the directory exists before writing.
-            check_file = os.listdir(f'{OUTPUT_FOLDER}/{_class["_filename"]}')
-
-            if f'{_class["_filename"]}.gml' in check_file:
-
-                # Write the formatted doc script to a new gml file at location.
-                text_file = open(filepath, "w")
-                text_file.write(output_code)
-                text_file.close()
-
-                # Log that bad boy.
-                print(f'\'{_class["_filename"]}\' ==> {filepath}.')
+        # Log the update.
+        print(f'\'{_class["_filename"]}\' ==> {filepath}.')
 
     print("FINISHED.")
 
 def get_settings():
     """
-    This function takes settings from user_settings and puts them in a dictionary.
+    This function reads user_settings and adds them to a dictionary.
     """
 
-    SETTINGS_FOLDER = ROOT_FOLDER + "settings/"
-
-    if "settings" not in os.listdir("./"):
-      os.mkdir(SETTINGS_FOLDER)
-
-    if "user_settings" not in os.listdir(SETTINGS_FOLDER):
+    if "user_settings" not in os.listdir(ROOT_DIR):
 
         # Create a settings file at location.
-        text_file = open(SETTINGS_FOLDER + "user_settings", "w")
-        text_file.write(f"""first_time:y
-quick_write:n
-create_files:n""")
+        text_file = open(SETTINGS_PATH, "w")
+        text_file.write(f"""templates_dir: {ROOT_DIR}/input/templates
+data_dir: {ROOT_DIR}/input/data
+output_dir: {ROOT_DIR}/output""")
         text_file.close()
 
     settings_dict = {}
 
     # Open user settings txt file to read
-    with open(f'{SETTINGS_FOLDER}/user_settings') as f:
+    with open(SETTINGS_PATH) as f:
 
         text = f.readlines()
 
-        # Go through text settings and put them in a dictionary.
+        # Go through text settings and add them to a dictionary.
         for line in text:
-
-            key = line.strip().split(":")[0]
-            value = line.strip().split(":")[1]
-
-            settings_dict[key] = value
+            line = line.strip().split(": ") # Mimics shallow JSON structure
+            settings_dict[line[0]] = line[1]
 
     return settings_dict
 
-def set_settings(setting, yes_no):
+def set_settings(setting, value):
     """
     This function writes settings to the user_settings txt file
     """
@@ -260,22 +227,19 @@ def set_settings(setting, yes_no):
     # Read from txt file
     settings_dict = get_settings()
 
-    SETTINGS_FILE = ROOT_FOLDER + "settings/user_settings"
-
     if setting in settings_dict.keys():
 
         output_txt = ""
 
         # Update the passed in settings dict, 
-        settings_dict[setting] = yes_no
+        settings_dict[setting] = value
 
         # Then save those updates to 'user_settings'.txt
         for line in settings_dict:
-
-            output_txt += (str(line) + ":" + str(settings_dict[line]) + "\n")
+            output_txt += f'{line}: {settings_dict[line]}{NL}'
 
         # Write new dictionary to file.
-        text_file = open(SETTINGS_FILE, "w")
+        text_file = open(SETTINGS_PATH, "w")
         text_file.write(output_txt)
         text_file.close()
 
@@ -283,23 +247,35 @@ def set_settings(setting, yes_no):
 
         print("Setting not found.")
 
-def user_change_setting(setting, message):
+def user_input_setting(setting, message, options=[]):
     """
-    This function prompts user input (y/n) and then changes settings appropriately.
+    This function prompts user input and changes the settings appropriately.
     """
 
     user_input = ""
 
-    # Loop for user input
-    while user_input != "y" and user_input != "n":
+    # Wait for user input to match one of the avail. options.
+    while user_input not in options:
         user_input = input("\n" + message + "\n")
+        if len(options) == 0:
+            # If no options provided, accept anything.
+            break
 
-    # Check user_input i.e. if we have a 'y' or 'n'
-    # set_settings changes the txt file so this is all we have to do.
-    if user_input == "y":
-        set_settings(setting, 'y')
-    elif user_input == "n":
-        set_settings(setting, 'n')
+    # Once user_input in options, update the setting.
+    set_settings(setting, user_input)
+
+def user_dirpath_setting(setting, message):
+    """
+    This function prompts the user to select a filepath and changes the settings appropriately.
+    """
+
+    user_input = ""
+
+    # Wait for the user to select the directory
+    user_input = askdirectory()
+
+    # Update the setting.
+    set_settings(setting, user_input)
 
 def run_menu():
 
@@ -318,22 +294,6 @@ This generator takes a JSON File and a Python template, and combines them togeth
         # Get the settings from 'user_settings.txt'. Refresh each loop cycle.
         settings_dict = get_settings()
 
-        # INITIALISE SETTINGS
-        # If it is the first time user has booted up:
-        if settings_dict['first_time'] == 'y':
-
-            print("""~~~~~ Initialise Settings ~~~~~
-            """)
-
-            # Create_files setting.
-            user_change_setting('create_files', "Would you like to allow DocGen to create files in your directory? (y/n)")
-
-            # Quick_write setting
-            user_change_setting('quick_write', "Would you like to allow DocGen to quick write at the push of a button? (y/n)")
-
-            # It is now no longer the first time the user has booted up
-            set_settings('first_time', 'n')
-
         # MAIN MENU LOOP
         user_input = input("""~~~~~ What would you like to do? ~~~~~
 
@@ -344,154 +304,61 @@ Exit:       'e'
 
 """)
 
-        if user_input == "r":
-
-            # This boolean arms the DocGen
-            run_boolean = False
-
-            # Check whether quick write is enabled.
-            if settings_dict['quick_write'] == 'n':
-
-                # If it isn't enabled, check whether they want to write or not.
-                user_input = input("Would you like to run DocGen? Be warned, it may do unexpected things. (y/n)")
-
-                if user_input == 'y':
-                    # They have agreed to the terms and conditions, and we may now arm the directory destroyer.
-                    run_boolean = True
-
-                else:
-                    # They have not agreed to the terms and conditions, and will be returned to the main menu.
-                    run_boolean = False
-
-            elif settings_dict['quick_write'] == 'y':
-
-                # Quick write is on, so arm the DocGen
-                run_boolean = True
-
-            # Check if it is armed.
-            if run_boolean == True:
-
-                # Run the thing.
-                ### PASS IN SETTINGS
-                do_the_thing(settings_dict)
+        if user_input == "r": # Run
+            do_the_thing(settings_dict)
 
         elif user_input == "h":
 
             # Help message to console
-            print(f"""~~~~~ DocGen: The Document Generator ~~~~~
-Originally written for Aether in 2020.
-
-This Document Generator was written to generate and modify the API for a game engine. Essentially, it takes json files from the
-"input" folder, and then uses python templates from the "templates" folder, and merges them. This allows us to create vast
-quantities of code, and edit that code very quickly and easily.
-
-I will now walk you through using DocGen:
-
-1. You will need to create a json file of the following format:
-
-    a) Entries with #'s in front and behind are for you to put in yourself. 
-    b) The "_default" entry at the beginning is optional, if you would like a default template.
-    c) The "_filename" entry is what the new file created will be called.
-    d) The "_templates" entry is where you can specify which python templates to enact on the Json file.
-    e) The "..."'s indicate that you can add as many more entries here as you require.
-    f) [#template1#, #template2#, ...] etc. refers to the specific python templates you would like. The
-        order of these gives the order that they will appear in the file.
-    g) #optional_property1" etc. gives optional properties that you can use in the code. For example, if
-        you wanted a "type" entry that was unique to each file, you would put this here. The #value# of
-        this entry can be in the format of a dictionary, list, or string.
-
-Json:
-
-{{
-    "_default":[#template1#, #template2#, ...]
-    "#firstfilename#":{{
-        "_filename": #filename#
-        "_templates": [#template1#, #template2#, ...]
-        #optional_property1#: #value#
-        #optiona2_property1#: #value#
-        ...
-    }}
-    "#secondfilename#":{{
-        "_filename": #filename#
-        "_templates": [#template1#, #template2#, ...]
-        #optional_property1#: #value#
-        #optiona2_property1#: #value#
-        ...
-    }}
-    "#thirdfilename#":{{
-            "_filename": #filename#
-            "_templates": [#template1#, #template2#, ...]
-            #optional_property1#: #value#
-            #optiona2_property1#: #value#
-            ...
-    }}
-    ...
-}}
-
-2. You will need to create a python file which returns a string.
-
-You can create this string in whichever way pleases you, but it is highly recommended to make use of
-Python's "f-string" templates which have the following form:
-
-f\"""Here is some text.
-
-Variables can be used like this: {{class_name}} would write the variable "class_name" to the string.
-\"""
-
-Using loops and appropriate information flow will allow you to create a string in such a way as to 
-represent even larger quantities of code.
-
-Providing that the Python file is in the "templates" folder, and that that file returns a string, a
-file will be generated by Document Generator.
-
-3. Linking the Python Template and the Json file is done by the following steps:
-
-    a) Writing and placing a Python "Template" file (.py) in the "templates" folder
-    b) Writing a Json file that has that template included in either the "_default" or "_templates" 
-    entry. Extra properties added will be read by DocGen, and can be used in the Python Templates.
-    c) Running DocGen.
-
-Once this process is complete, if you need to add to or amend your code, you can simply change the template
-or Json file. This will allow you to make, say, a small (or large!) change to every file in your Document Generator
-at the press of a button.
-
-""")
+            readme = open("./README.md")
+            readme_str = readme.read()
+            print(readme_str)
+            readme.close
 
         elif user_input == "s":
             # Settings menu
             user_input = ""
+            options = {
+                "t": {
+                    "message": "Where would you like to load templates from?",
+                    "name": "templates_dir",
+                    "func": user_dirpath_setting
+                },
+                "d": {
+                    "message": "Where would you like to load data from?",
+                    "name": "data_dir",
+                    "func": user_dirpath_setting
+                },
+                "o": {
+                    "message": "Where would you like to save the output to?",
+                    "name": "output_dir",
+                    "func": user_dirpath_setting
+                },
+                "e": {
+                    "message": "Return to menu."
+                }
+            }
 
-            while user_input != 'c' and user_input != 'q':
-                
-                user_input = input("""~~~~~ Which setting would you like to change? ~~~~~
-
-Create Files:       'c' 
-Choose whether DocGen can create files in your directory.
-
-Quick Write:        'q'    
-Choose whether DocGen can quick write at the push of a button.
-
-""")
-
-            if user_input == 'c':
-                # Create_files setting.
-                user_change_setting('create_files', "Would you like to allow DocGen to create files in your directory? (y/n)")
-
-            elif user_input == 'q':
-                # Quick_write setting
-                user_change_setting('quick_write', "Would you like to allow DocGen to quick write at the push of a button? (y/n)")
-
-
-        elif user_input == "n":
-
-            print("Easter Egg Discovered :O")
+            while user_input not in options.keys():
+                title = f"~~~~~ Which setting would you like to change? ~~~~~{NL*2}"
+                msg = title
+                for key in options:
+                    option = options[key]
+                    sp = len(title) - len(option["message"]) # Just enough spaces to right-align the key.
+                    msg += f"{option['message']}{' '*sp}'{key}'{NL}"
+                    # E.g. Where would you like to load templates from?    't'
+                user_input = input(msg)
+            
+            # User pressed one of the options:
+            option = options[user_input]
+            if "func" in option:
+                option["func"](option["name"])
 
         elif user_input == "e":
-
             break
 
     # Exit message
-    print("Many thanks for using DocGen")
+    print("Many thanks for using DocGen.")
 
 if __name__ == "__main__":
 

@@ -191,6 +191,12 @@ def do_the_thing(settings_dict):
 
     print("FINISHED.")
 
+def get_input(message):
+    """
+    Get input from the user in lowercase.
+    """
+    return input(message).lower()
+
 def get_settings():
     """
     This function reads user_settings and adds them to a dictionary.
@@ -256,7 +262,7 @@ def user_input_setting(setting, message, options=[]):
 
     # Wait for user input to match one of the avail. options.
     while user_input not in options:
-        user_input = input("\n" + message + "\n")
+        user_input = get_input("\n" + message + "\n")
         if len(options) == 0:
             # If no options provided, accept anything.
             break
@@ -264,15 +270,18 @@ def user_input_setting(setting, message, options=[]):
     # Once user_input in options, update the setting.
     set_settings(setting, user_input)
 
-def user_dirpath_setting(setting, message):
+def user_dirpath_setting(setting):
     """
-    This function prompts the user to select a filepath and changes the settings appropriately.
+    This function prompts the user to select a directory and changes the settings appropriately.
+    Doesn't do anything if no dir is selected.
     """
 
     user_input = ""
 
     # Wait for the user to select the directory
     user_input = askdirectory()
+    if user_input == "":
+        return
 
     # Update the setting.
     set_settings(setting, user_input)
@@ -295,7 +304,7 @@ This generator takes a JSON File and a Python template, and combines them togeth
         settings_dict = get_settings()
 
         # MAIN MENU LOOP
-        user_input = input("""~~~~~ What would you like to do? ~~~~~
+        user_input = get_input("""~~~~~ What would you like to do? ~~~~~
 
 Run:        'r'
 Help:       'h'
@@ -347,7 +356,7 @@ Exit:       'e'
                     sp = len(title) - len(option["message"]) # Just enough spaces to right-align the key.
                     msg += f"{option['message']}{' '*sp}'{key}'{NL}"
                     # E.g. Where would you like to load templates from?    't'
-                user_input = input(msg)
+                user_input = get_input(msg)
             
             # User pressed one of the options:
             option = options[user_input]

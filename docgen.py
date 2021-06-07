@@ -232,7 +232,10 @@ def get_settings():
         text_file = open(SETTINGS_FOLDER + "user_settings", "w")
         text_file.write(f"""first_time:y
 quick_write:n
-create_files:n""")
+create_files:n
+templates_dir:./templates
+data_dir:./input
+output_dir:./output""")
         text_file.close()
 
     settings_dict = {}
@@ -252,7 +255,7 @@ create_files:n""")
 
     return settings_dict
 
-def set_settings(setting, yes_no):
+def set_settings(setting, value):
     """
     This function writes settings to the user_settings txt file
     """
@@ -267,7 +270,7 @@ def set_settings(setting, yes_no):
         output_txt = ""
 
         # Update the passed in settings dict, 
-        settings_dict[setting] = yes_no
+        settings_dict[setting] = value
 
         # Then save those updates to 'user_settings'.txt
         for line in settings_dict:
@@ -283,23 +286,22 @@ def set_settings(setting, yes_no):
 
         print("Setting not found.")
 
-def user_change_setting(setting, message):
+def user_input_setting(setting, message, options=[]):
     """
-    This function prompts user input (y/n) and then changes settings appropriately.
+    This function prompts user input and then changes the settings appropriately.
     """
 
     user_input = ""
 
-    # Loop for user input
-    while user_input != "y" and user_input != "n":
+    # Wait for user input to match one of the avail. options.
+    while user_input not in options:
         user_input = input("\n" + message + "\n")
+        if len(options) == 0:
+            # If no options provided, accept anything.
+            break
 
-    # Check user_input i.e. if we have a 'y' or 'n'
-    # set_settings changes the txt file so this is all we have to do.
-    if user_input == "y":
-        set_settings(setting, 'y')
-    elif user_input == "n":
-        set_settings(setting, 'n')
+    # Once user_input in options, update the setting.
+    set_settings(setting, user_input)
 
 def run_menu():
 
@@ -326,10 +328,10 @@ This generator takes a JSON File and a Python template, and combines them togeth
             """)
 
             # Create_files setting.
-            user_change_setting('create_files', "Would you like to allow DocGen to create files in your directory? (y/n)")
+            user_input_setting('create_files', "Would you like to allow DocGen to create files in your directory? (y/n)", ["y", "n"])
 
             # Quick_write setting
-            user_change_setting('quick_write', "Would you like to allow DocGen to quick write at the push of a button? (y/n)")
+            user_input_setting('quick_write', "Would you like to allow DocGen to quick write at the push of a button? (y/n)", ["y", "n"])
 
             # It is now no longer the first time the user has booted up
             set_settings('first_time', 'n')
@@ -460,8 +462,15 @@ at the press of a button.
         elif user_input == "s":
             # Settings menu
             user_input = ""
+            options = {
+                "c": ["create_files", "Would you like to allow DocGen to create files in your directory? (y/n)", ["y", "n"]],
+                "q": ["quick_write", "Would you like to allow DocGen to quick write at the push of a button? (y/n)", ["y", "n"]],
+                "t": ["templates_dir", "Where would you like to load templates from?", []],
+                "d": ["data_dir", "Where would you like to load data from?", []],
+                "o": ["output_dir", "Where would you like to save the output to?", []]
+            }
 
-            while user_input != 'c' and user_input != 'q':
+            while user_input not in options.keys():
                 
                 user_input = input("""~~~~~ Which setting would you like to change? ~~~~~
 
@@ -471,23 +480,20 @@ Choose whether DocGen can create files in your directory.
 Quick Write:        'q'    
 Choose whether DocGen can quick write at the push of a button.
 
+Template location:   't'
+Specify directory for templates.
+
+Data location:   'd'
+Specify directory for data.
+
+Output location:   'o'
+Specify root directory for output.
+
 """)
-
-            if user_input == 'c':
-                # Create_files setting.
-                user_change_setting('create_files', "Would you like to allow DocGen to create files in your directory? (y/n)")
-
-            elif user_input == 'q':
-                # Quick_write setting
-                user_change_setting('quick_write', "Would you like to allow DocGen to quick write at the push of a button? (y/n)")
-
-
-        elif user_input == "n":
-
-            print("Easter Egg Discovered :O")
+            option = options[user_input]
+            user_input_setting(option[0], option[1], option[2])
 
         elif user_input == "e":
-
             break
 
     # Exit message

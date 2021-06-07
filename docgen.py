@@ -9,6 +9,11 @@ import json, os, importlib
 # Used for getting names from class.
 from utils import parse_dict_properties
 
+# Used for getting filepath input.
+from tkinter import Tk
+from tkinter.filedialog import askdirectory
+Tk().withdraw() # Prevent TkInter from displaying root GUI.
+
 # Define filepath constants.
 ROOT_DIR = os.getcwd()
 SETTINGS_DIR = ROOT_DIR + "/settings"
@@ -235,8 +240,8 @@ def get_settings():
         text_file.write(f"""first_time:y
 quick_write:n
 create_files:n
-templates_dir:{ROOT_DIR}/templates
-data_dir:{ROOT_DIR}/input
+templates_dir:{ROOT_DIR}/input/templates
+data_dir:{ROOT_DIR}/input/data
 output_dir:{ROOT_DIR}/output""")
         text_file.close()
 
@@ -289,7 +294,7 @@ def set_settings(setting, value):
 
 def user_input_setting(setting, message, options=[]):
     """
-    This function prompts user input and then changes the settings appropriately.
+    This function prompts user input and changes the settings appropriately.
     """
 
     user_input = ""
@@ -302,6 +307,19 @@ def user_input_setting(setting, message, options=[]):
             break
 
     # Once user_input in options, update the setting.
+    set_settings(setting, user_input)
+
+def user_dirpath_setting(setting, message):
+    """
+    This function prompts the user to select a filepath and changes the settings appropriately.
+    """
+
+    user_input = ""
+
+    # Wait for the user to select the directory
+    user_input = askdirectory()
+
+    # Update the setting.
     set_settings(setting, user_input)
 
 def run_menu():
@@ -390,11 +408,11 @@ Exit:       'e'
             # Settings menu
             user_input = ""
             options = {
-                "c": ["create_files", "Would you like to allow DocGen to create files in your directory? (y/n)", ["y", "n"]],
-                "q": ["quick_write", "Would you like to allow DocGen to quick write at the push of a button? (y/n)", ["y", "n"]],
-                "t": ["templates_dir", "Where would you like to load templates from?", []],
-                "d": ["data_dir", "Where would you like to load data from?", []],
-                "o": ["output_dir", "Where would you like to save the output to?", []]
+                "c": [user_input_setting, "create_files", "Would you like to allow DocGen to create files in your directory? (y/n)", ["y", "n"]],
+                "q": [user_input_setting, "quick_write", "Would you like to allow DocGen to quick write at the push of a button? (y/n)", ["y", "n"]],
+                "t": [user_dirpath_setting, "templates_dir", "Where would you like to load templates from?", []],
+                "d": [user_dirpath_setting, "data_dir", "Where would you like to load data from?", []],
+                "o": [user_dirpath_setting, "output_dir", "Where would you like to save the output to?", []]
             }
 
             while user_input not in options.keys():
@@ -418,7 +436,7 @@ Specify root directory for output.
 
 """)
             option = options[user_input]
-            user_input_setting(option[0], option[1], option[2])
+            option[0](option[1], option[2])
 
         elif user_input == "e":
             break

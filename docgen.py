@@ -1,6 +1,6 @@
 
 #############################################
-# README : Run this program to get started. #
+#      RUN THIS PROGRAM TO GET STARTED      #
 #############################################
 
 # Do things with JSON, files and dynamically importing functions.
@@ -10,56 +10,8 @@ import json, os, importlib
 from utils import parse_dict_properties
 
 # Define filepath constants.
-ROOT_FOLDER = os.getcwd() + "/"
-INPUT_FOLDER = ROOT_FOLDER + "input"
-TEMPLATES_FOLDER = ROOT_FOLDER + "templates"
-OUTPUT_FOLDER = ROOT_FOLDER + "output"
-
-# Initialise templates dictionary
-templates = {}
-
-# Load all files into templates dictionary
-# Crawl through Templates folder and dynamically import functions. This allows user to add function files.
-### !todo MAKE THIS RECURSIVELY GO THROUGH ALL FOLDERS
-# Note that This is done in global scope
-for file_name in os.listdir(TEMPLATES_FOLDER): # Assuming cwd == 'doc-gen/'.
-
-    # Error checks
-    if file_name == "__init__.py" or file_name == "__pycache__":
-        continue
-
-    ### if file_name is a directory:
-    ### run recursive function
-    # !todo - this broke when I had a folder at `general/__pycache__`.
-    # Pycache is gitignored so 'general' stayed, but this loop doesn't know how to handle directories.
-    # Instead of fixing the problem, I just deleted the directory :)
-
-    ### DEF ()
-    # Strip off the .py on end of file name - not required for import lib.
-    file_name_stripped = file_name.split('.')[0]
-
-    template_string = 'templates.' + file_name_stripped
-
-    # Import programmatically with importlib.
-    module = importlib.import_module(template_string)
-    ### Return module (for scope purposes)
-
-    # Add entry to templates dictionary. Getattr takes a function from an object using a string (an f-string here)
-    # We want the form:
-    #           "actor_exception": actor_exception,
-    #                 str              function
-    # Use module that is returned by function
-
-    # Returns a Boolean - checking whether the function is in the file.
-    if hasattr(module, file_name_stripped):
-        
-        templates[file_name_stripped] = getattr(module, file_name_stripped)
-
-    else:
-
-        print(f'<!> File name does not match name of function in "{file_name_stripped}"! Skipping.')
-        input("Press any key to continue.")
-        continue
+ROOT_DIR = os.getcwd()
+SETTINGS_DIR = ROOT_DIR + "/settings"
 
 def do_the_thing(settings_dict):
     """
@@ -68,6 +20,58 @@ def do_the_thing(settings_dict):
     This function creates the Document.
     """
 
+    # Initialise templates dictionary
+    templates = {}
+
+    # Get directories.
+    settings = get_settings()
+    TEMPLATES_DIR = settings["templates_dir"]
+    DATA_DIR = settings["data_dir"]
+    OUTPUT_DIR = settings["output_dir"]
+
+    # Load all files into templates dictionary
+    # Crawl through Templates dir and dynamically import functions. This allows user to add function files.
+    ### !todo MAKE THIS RECURSIVELY GO THROUGH ALL DIRECTORIES
+    # Note that This is done in global scope
+    for file_name in os.listdir(TEMPLATES_DIR): # Assuming cwd == 'doc-gen/'.
+
+        # Error checks
+        if file_name == "__init__.py" or file_name == "__pycache__":
+            continue
+
+        ### if file_name is a directory:
+        ### run recursive function
+        # !todo - this broke when I had a dir at `general/__pycache__`.
+        # Pycache is gitignored so 'general' stayed, but this loop doesn't know how to handle directories.
+        # Instead of fixing the problem, I just deleted the directory :)
+
+        ### DEF ()
+        # Strip off the .py on end of file name - not required for import lib.
+        file_name_stripped = file_name.split('.')[0]
+
+        template_string = 'templates.' + file_name_stripped
+
+        # Import programmatically with importlib.
+        module = importlib.import_module(template_string)
+        ### Return module (for scope purposes)
+
+        # Add entry to templates dictionary. Getattr takes a function from an object using a string (an f-string here)
+        # We want the form:
+        #           "actor_exception": actor_exception,
+        #                 str              function
+        # Use module that is returned by function
+
+        # Returns a Boolean - checking whether the function is in the file.
+        if hasattr(module, file_name_stripped):
+            
+            templates[file_name_stripped] = getattr(module, file_name_stripped)
+
+        else:
+
+            print(f'<!> File name does not match name of function in "{file_name_stripped}"! Skipping.')
+            input("Press any key to continue.")
+            continue
+
     # Get Json information. Store in 'classes' dictionary.
 
     # 'classes' is an array that contains the data objects to format the templates.
@@ -75,7 +79,7 @@ def do_the_thing(settings_dict):
     # default_dict is a dictionary which stores the default values of each json file (In case an entry has no template).
     default_dict = {}
 
-    for file_name in os.listdir(INPUT_FOLDER): # Assuming cwd == '/doc-gen'.        
+    for file_name in os.listdir(DATA_DIR): # Assuming cwd == '/doc-gen'.        
 
         # Skip
         if file_name == "__init__.py":
@@ -85,7 +89,7 @@ def do_the_thing(settings_dict):
         file_name_stripped = file_name.split('.')[0]
 
         # Load the raw JSON data into 'data'.
-        with open(f'{INPUT_FOLDER}/{file_name}') as f:
+        with open(f'{DATA_DIR}/{file_name}') as f:
             try:
                 data = json.load(f)
             except:
@@ -182,7 +186,7 @@ def do_the_thing(settings_dict):
             output_code += templates[function_name](_class, _classes)
 
         # Create filepath.
-        filepath = f'{OUTPUT_FOLDER}/{_class["_filename"]}'
+        filepath = f'{OUTPUT_DIR}/{_class["_filename"]}'
 
         if "output" not in os.listdir():
           os.mkdir("output")
@@ -202,7 +206,7 @@ def do_the_thing(settings_dict):
         elif settings_dict["create_files"] == 'n':
 
             # We need to check if the directory exists before writing.
-            check_file = os.listdir(f'{OUTPUT_FOLDER}/{_class["_filename"]}')
+            check_file = os.listdir(f'{OUTPUT_DIR}/{_class["_filename"]}')
 
             if f'{_class["_filename"]}.gml' in check_file:
 
@@ -221,27 +225,25 @@ def get_settings():
     This function takes settings from user_settings and puts them in a dictionary.
     """
 
-    SETTINGS_FOLDER = ROOT_FOLDER + "settings/"
-
     if "settings" not in os.listdir("./"):
-      os.mkdir(SETTINGS_FOLDER)
+      os.mkdir(SETTINGS_DIR)
 
-    if "user_settings" not in os.listdir(SETTINGS_FOLDER):
+    if "user_settings" not in os.listdir(SETTINGS_DIR):
 
         # Create a settings file at location.
-        text_file = open(SETTINGS_FOLDER + "user_settings", "w")
+        text_file = open(SETTINGS_DIR + "/user_settings", "w")
         text_file.write(f"""first_time:y
 quick_write:n
 create_files:n
-templates_dir:./templates
-data_dir:./input
-output_dir:./output""")
+templates_dir:{ROOT_DIR}/templates
+data_dir:{ROOT_DIR}/input
+output_dir:{ROOT_DIR}/output""")
         text_file.close()
 
     settings_dict = {}
 
     # Open user settings txt file to read
-    with open(f'{SETTINGS_FOLDER}/user_settings') as f:
+    with open(f'{SETTINGS_DIR}/user_settings') as f:
 
         text = f.readlines()
 
@@ -262,8 +264,7 @@ def set_settings(setting, value):
 
     # Read from txt file
     settings_dict = get_settings()
-
-    SETTINGS_FILE = ROOT_FOLDER + "settings/user_settings"
+    filepath = SETTINGS_DIR + "/user_settings"
 
     if setting in settings_dict.keys():
 
@@ -278,7 +279,7 @@ def set_settings(setting, value):
             output_txt += (str(line) + ":" + str(settings_dict[line]) + "\n")
 
         # Write new dictionary to file.
-        text_file = open(SETTINGS_FILE, "w")
+        text_file = open(filepath, "w")
         text_file.write(output_txt)
         text_file.close()
 

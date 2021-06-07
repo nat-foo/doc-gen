@@ -42,8 +42,8 @@ def parse_dict_properties(dictionary):
         # elif isinstance(val, str): # If the value is a string,
         else:
             key, Key, KEY, _key = parse_names(_key)
-            val = dictionary[_key]
-            val = str(val) # This is where we make all values a string. To revert, comment this line, and uncomment 'elif isinstance'.
+            val = dictionary[key]
+            val = str(val) # This is where we make all values a string. To revert, comment this line, and uncomment 'elif isinstance' above.
             value, Value, VALUE, _value = parse_names(val)
             dictionary[key] = value
             dictionary[Key] = Value

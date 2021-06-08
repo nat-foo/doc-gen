@@ -44,10 +44,10 @@ def parse_dict_properties(dictionary):
             key, Key, KEY, _key = parse_names(_key)
             val = dictionary[key]
             val = str(val) # This is where we make all values a string. To revert, comment this line, and uncomment 'elif isinstance' above.
-            value, Value, VALUE, _value = parse_names(val)
+            value, Value, VALUE, value_ = parse_names(val)
             dictionary[key] = value
             dictionary[Key] = Value
             dictionary[KEY] = VALUE
-            dictionary[f'_{key}'] = _value
+            dictionary[f'{key}_'] = value_
 
     return dictionary

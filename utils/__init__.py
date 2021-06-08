@@ -2,3 +2,4 @@
 from .names import *
 from .strings import *
 from .modules import *
+from .json import *

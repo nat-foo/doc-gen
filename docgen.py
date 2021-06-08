@@ -4,9 +4,9 @@
 #############################################
 
 # Do things with JSON, files and dynamically importing functions.
-import json, os
+import os
 
-# Used for getting names from class.
+# Used for getting names from documents.
 from utils import parse_dict_properties
 
 # Used for getting filepath input.
@@ -15,7 +15,7 @@ from tkinter.filedialog import askdirectory
 Tk().withdraw() # Prevent TkInter from displaying root GUI.
 
 # Used for loading external Python modules.
-from utils import load_module
+from utils import load_modules, load_data
 
 # Path globals.
 ROOT_DIR = os.getcwd()
@@ -25,169 +25,97 @@ SETTINGS_PATH = f'{ROOT_DIR}/user_settings'
 TAB = "\t"
 NL = "\n"
 
-def do_the_thing(settings_dict):
+def do_the_thing(settings):
     """
-    Template + Class data = Customised Document
+    Template + JSON data = Customised document
 
-    This function creates the Document.
+    This function creates the document.
     """
 
-    # Initialise templates dictionary
-    templates = {}
-
-    # Get directories.
-    settings = get_settings()
+    # Get directories from settings.
     TEMPLATES_DIR = settings["templates_dir"]
     DATA_DIR = settings["data_dir"]
     OUTPUT_DIR = settings["output_dir"]
 
-    # Load all files into templates dictionary
-    # Crawl through Templates dir and dynamically import functions. This allows user to add function files.
-    for name in os.listdir(TEMPLATES_DIR):
+    # Load templates from directory.
+    templates = load_modules(TEMPLATES_DIR)
 
-        # Error checks
-        if name == "__init__.py" or name == "__pycache__":
-            continue
+    # Load data from directory.
+    data, defaults = load_data(DATA_DIR)
 
-        path = f'{TEMPLATES_DIR}/{name}'
-
-        module = load_module(name, path)
-
-        # Check whether a function by the same name is in the Python script.
-        func_name = name.split('.')[0] # Remove trailing `.py`
-        if hasattr(module, func_name):
-            
-            templates[func_name] = getattr(module, func_name)
-
-        else:
-
-            print(f'<!> File name does not match name of function in "{name}"! Skipping.')
-            input("Press any key to continue.")
-            continue
-
-    # Get Json information. Store in 'classes' dictionary.
-
-    # 'classes' is an array that contains the data objects to format the templates.
-    _classes = {}
-    # default_dict is a dictionary which stores the default values of each json file (In case an entry has no template).
-    default_dict = {}
-
-    for file_name in os.listdir(DATA_DIR): # Assuming cwd == '/doc-gen'.        
-
-        # Skip
-        if file_name == "__init__.py":
-            continue
-
-        # Strip off the .json on end of file name.
-        file_name_stripped = file_name.split('.')[0]
-
-        # Load the raw JSON data into 'data'.
-        with open(f'{DATA_DIR}/{file_name}') as f:
-            try:
-                data = json.load(f)
-            except:
-                print(f"<!> Bad JSON data in '{file_name}'! Skipping.")
-                continue
-
-            # Check if ENITRE json file is a dictionary (should be)
-            # If it's a dictionary, extend onto our dictionary of classes i.e. dicts, init, lists, objects
-            if isinstance(data, dict):
-
-                # If not enabled, don't add it (but enabled by default).
-                # Note: Deactivates entire Json File
-                if "_enabled" in data and not data["_enabled"]:
-                    continue
-
-                # If there is a default value, put it in the default dictionary.
-                if "_default" in data:
-                    default_dict[file_name_stripped] = data.pop('_default')
-
-                # Add parent value to each class in the data dictionary
-                # This is done so that we know where the data has come from.
-                # - Guaranteed you will come back to this and be confused - sorry, I tried my best to be readable
-                for _cname in data:
-                    # Add _parent to value list (data[_cname] is the value)
-                    data[_cname]["_parent"] = file_name_stripped
-
-                _classes.update(data)
-
-    # Add class name permutations to _classes.
-    # This way we only have to parse the class names once each.
-    for _cname in _classes:
-        _class = _classes[_cname]
+    # Add item name permutations to data.
+    # This way we only have to parse the item names once each.
+    for item_name in data:
+        item = data[item_name]
 
         # The default template now comes at the start of the json file.
         # We cant parse names if it is the default template.
-        if _cname == "_default":
+        if item_name == "_default":
             continue
 
         # Parse key-value case-structure permutations.
         # E.g. Sentence-case, lowercase, UPPER_CASE.
-        _class = parse_dict_properties(_class)
+        item = parse_dict_properties(item)
 
-        # Add "_name" key to dict, to auto-fill the class name.
-        _class["_name"] = _cname
+        # Add "_name" key to dict, to auto-fill the item name.
+        item["_name"] = item_name
 
-    # Now we have a list of classes and a dict of templates (And a dict of default values!).
+    # Now we have a list of data and a dict of templates (And a dict of default values!).
     # By their powers combined, we can create anything... >:)
-    for _cname in _classes:
+    for item_name in data:
 
         # Reset output_code
         output_code = ""
 
-        # Refer to the correct class
-        _class = _classes[_cname]
+        # Refer to the correct item
+        item = data[item_name]
 
-        # Get the value for the class
-        _classvalue = _classes[_cname]
-
-        if "_templates" in _classvalue:
+        if "_templates" in item:
             # Then use the template
-            function_list = _classvalue["_templates"]
+            functions = item["_templates"]
 
         else:
+            # Find the item type
+            item_type = item["_type"]
 
-            # Find the parent of the class
-            _parent_class = _classvalue["_parent"]
-
-            if _parent_class in default_dict:
+            if item_type in defaults:
                 # If parent is in the default list, use the default function list.
-                function_list = default_dict[_parent_class]
+                functions = defaults[item_type]
 
             else:
-
-                print(f'<!> No template was specified for {_class["_name"]}! Skipping.')
+                # Print quiet error.
+                print(f'<!> No template was specified for {item["_name"]}! Skipping.')
                 continue
 
         # Debug space:
         """
-        if (_cname == "render"):
+        if (item_name == "render"):
             pause="here"
         """
 
-        # Now, construct the code by going through the function_list and performing the functions
+        # Now, construct the code by going through the functions and performing the functions
         # within it. It will do them in order that they are written in the "_default" or "_templates"
         # entry in the Json file.
-        for function_name in function_list:
+        for function_name in functions:
 
             if function_name not in templates:
-                print(f'<!> Unknown template: \'{_class["_template"]}\' - skipping {_class["_name"]}!')
+                print(f'<!> Unknown template: \'{item["_template"]}\' - skipping {item["_name"]}!')
                 continue
 
             # templates is the list of functions. Call the correct template function and
             # add it to output code.
-            output_code += templates[function_name](_class, _classes)
+            output_code += templates[function_name](item, data)
 
         # Create filepath.
-        filepath = f'{OUTPUT_DIR}/{_class["_filename"]}'
+        filepath = f'{OUTPUT_DIR}/{item["_filename"]}'
 
-        # Write the formatted doc script to a new file at location.
+        # Write the formatted item script to a new file at location.
         text_file = open(filepath, "w")
         text_file.write(output_code)
         text_file.close()
 
         # Log the update.
-        print(f'\'{_class["_filename"]}\' ==> {filepath}.')
+        print(f'\'{item["_filename"]}\' ==> {filepath}.')
 
     print("FINISHED.")
 
@@ -288,7 +216,7 @@ def user_dirpath_setting(setting):
 
 def run_menu():
 
-    print("""Welcome to DocGen.
+    print("""Welcome to itemGen.
 
 This program was written for Aether to quickly edit an API on the fly.
 
@@ -301,7 +229,7 @@ This generator takes a JSON File and a Python template, and combines them togeth
     while True:
 
         # Get the settings from 'user_settings.txt'. Refresh each loop cycle.
-        settings_dict = get_settings()
+        settings = get_settings()
 
         # MAIN MENU LOOP
         user_input = get_input("""~~~~~ What would you like to do? ~~~~~
@@ -314,7 +242,7 @@ Exit:       'e'
 """)
 
         if user_input == "r": # Run
-            do_the_thing(settings_dict)
+            do_the_thing(settings)
 
         elif user_input == "h":
 
@@ -367,7 +295,7 @@ Exit:       'e'
             break
 
     # Exit message
-    print("Many thanks for using DocGen.")
+    print("Many thanks for using itemGen.")
 
 if __name__ == "__main__":
 

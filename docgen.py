@@ -3,7 +3,7 @@
 #      RUN THIS PROGRAM TO GET STARTED      #
 #############################################
 
-# Do things with JSON, files and dynamically importing functions.
+# Do things with JSON, files and dynamically importing template_names.
 import os
 
 # Used for getting names from documents.
@@ -64,23 +64,18 @@ def do_the_thing(settings):
     # By their powers combined, we can create anything... >:)
     for item_name in data:
 
-        # Reset output_code
-        output_code = ""
-
-        # Refer to the correct item
         item = data[item_name]
+        document_text = ""
 
+        # Use either specific or default templates.
         if "_templates" in item:
-            # Then use the template
-            functions = item["_templates"]
+            template_names = item["_templates"]
 
         else:
-            # Find the item type
             item_type = item["_type"]
-
             if item_type in defaults:
-                # If parent is in the default list, use the default function list.
-                functions = defaults[item_type]
+                # If parent is in the default list, use the default list.
+                template_names = defaults[item_type]
 
             else:
                 # Print quiet error.
@@ -93,25 +88,25 @@ def do_the_thing(settings):
             pause="here"
         """
 
-        # Now, construct the code by going through the functions and performing the functions
-        # within it. It will do them in order that they are written in the "_default" or "_templates"
+        # Now, construct the code by going through the template_names and performing the template
+        # within it. It will do them in the order they are written in the "_default" or "_templates"
         # entry in the Json file.
-        for function_name in functions:
+        for template_name in template_names:
 
-            if function_name not in templates:
-                print(f'<!> Unknown template: \'{item["_template"]}\' - skipping {item["_name"]}!')
+            if template_name not in templates:
+                print(f'<!> Unknown template: \'{template_name}\' - skipping {item["_name"]}!')
                 continue
 
-            # templates is the list of functions. Call the correct template function and
-            # add it to output code.
-            output_code += templates[function_name](item, data)
+            # Pass the item, the data, and the settings into the template.
+            template = templates[template_name]
+            document_text += template(item=item, data=data, settings=settings)
 
         # Create filepath.
         filepath = f'{OUTPUT_DIR}/{item["_filename"]}'
 
-        # Write the formatted item script to a new file at location.
+        # Write the generated document to a new file in the output dir.
         text_file = open(filepath, "w")
-        text_file.write(output_code)
+        text_file.write(document_text)
         text_file.close()
 
         # Log the update.
@@ -216,7 +211,7 @@ def user_dirpath_setting(setting):
 
 def run_menu():
 
-    print("""Welcome to itemGen.
+    print("""Welcome to DocGen.
 
 This program was written for Aether to quickly edit an API on the fly.
 
@@ -295,7 +290,7 @@ Exit:       'e'
             break
 
     # Exit message
-    print("Many thanks for using itemGen.")
+    print("Many thanks for using DocGen.")
 
 if __name__ == "__main__":
 

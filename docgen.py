@@ -3,10 +3,10 @@
 #      RUN THIS PROGRAM TO GET STARTED      #
 #############################################
 
-# Do things with JSON, files and dynamically importing template_names.
+# Used for crawling directories.
 import os
 
-# Used for getting names from documents.
+# Used for parsing document properties into case variants.
 from utils import parse_dict_properties
 
 # Used for getting filepath input.
@@ -14,7 +14,7 @@ from tkinter import Tk
 from tkinter.filedialog import askdirectory
 Tk().withdraw() # Prevent TkInter from displaying root GUI.
 
-# Used for loading external Python modules.
+# Used for loading Python scripts and JSON, respectively.
 from utils import load_modules, load_data
 
 # Path globals.

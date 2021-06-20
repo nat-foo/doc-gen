@@ -18,7 +18,7 @@ def custom_field(path, id="", tabs=0, comment="//"):
     else:
         id = ' CUSTOM FIELD '
 
-    gateCharLenMax = 100
+    gateCharLenMax = 80
     gateCharLen = int((gateCharLenMax - len(id)) / len(comment))
     fieldGateStart = f'{comment}{id}{comment*gateCharLen} START {comment}'
     fieldGateEnd = f'{comment}{id}{comment*gateCharLen} END {comment*2}'
@@ -55,6 +55,7 @@ def custom_field(path, id="", tabs=0, comment="//"):
     # Example outcome:
     """
     // CUSTOM FIELD: METHODS ////////////////////////////////////////////////////////////////// START //
+    // CUSTOM FIELD: METHODS //////////////////////////////////////////////////////// START //
     function CreateActor(_role, _x, _y)
     {
         ...

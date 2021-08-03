@@ -38,6 +38,7 @@ def to_upper(string):
     # Converts the given string from camelCase into upper underscore case.
     new_string = re.sub('([A-Z])([A-Z][a-z])', r'\1_\2', string[1:])
     new_string = re.sub('([a-z])([A-Z])', r'\1_\2', new_string)
+    new_string = re.sub('([0-9])', r'_\1', new_string)
     new_string = string[0] + new_string
     new_string = new_string.upper()
     return new_string

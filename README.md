@@ -1,7 +1,7 @@
 # ~ DocGen: The Document Generator ~
 > Generate documents quickly using Python templates and JSON data.
 
-_Created by [Nathan Why](https://github.com/SupernaturalCow) and [Tom Holownia](https://github.com/TomHolownia). Originally written for [Aether](https://survansix.itch.io/aether-edit)._
+_Created by [Nathan Foottit](https://github.com/nat-foo) and [Tom Holownia](https://github.com/TomHolownia). Originally written for [Aether](https://survansix.itch.io/aether-edit)._
 
 This document generator was written to generate and modify the API for a game engine. It reads JSON files in `/input`, parsing the data through Python templates in `/templates`. This allows the quick creation and revision of vast quantities of customised content.
 
